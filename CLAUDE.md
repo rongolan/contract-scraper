@@ -4,16 +4,19 @@
 Building a comprehensive portal for all contract opportunities for service businesses in the Massachusetts area (eventually expanding to other states). Starting with municipal contracts as they're easier to scrape consistently, then expanding to commercial opportunities (hospitals, business parks, etc.).
 
 ## Current Status
-- **Phase**: End-to-end working prototype with limited scrapers
+- **Phase**: 🚀 **LIVE PRODUCTION APP** deployed on Heroku
+- **Production URL**: https://macontractscraper-18a0ccf5d2d6.herokuapp.com/
 - **Goal**: Get feedback from service business owners before investing in full scraper suite
 - **Target Users**: Service businesses (landscaping, construction, plumbing, electrical, etc.)
 
 ## Working Components
-- 4 operational scrapers: Somerville, Newton, Concord, Worcester (enhanced two-step scraping)
-- Daily automated scraping at 8am via cron job (with reliable shell script)
-- Data uploaded to both Google Sheets and PostgreSQL database
-- Advanced data cleaning: date standardization, industry classification, contract values
-- Web UI: Flask backend with responsive frontend (running on localhost:5001)
+- **4 operational scrapers**: Somerville, Concord, Worcester, Boston (enhanced two-step scraping)
+- **Newton scraper**: Temporarily disabled (requires Chrome setup for Heroku deployment)
+- **Production database**: PostgreSQL on Heroku (Essential-0 plan, $5/month)
+- **Data integration**: Google Sheets + PostgreSQL database with environment variables
+- **Advanced data cleaning**: Date standardization, industry classification, contract values
+- **Web UI**: Flask backend with responsive frontend, live filtering, urgency indicators
+- **Enhanced scraping**: Boston-specific field mapping (UNSPSC codes, Type classification)
 
 ## Scraper Standards
 - **Two-step approach**: Always scrape main table + individual bid pages when available
@@ -21,12 +24,36 @@ Building a comprehensive portal for all contract opportunities for service busin
 - **Graceful fallback**: Keep basic data if individual pages fail, maintain links for user access
 
 ## Technical Setup
+
+### Production Environment (Heroku)
+- **Hosting**: Heroku (macontractscraper app)
+- **Database**: PostgreSQL Essential-0 ($5/month, 10k rows, 20 connections)
+- **Environment**: Python 3.11 with managed dependencies
+- **Security**: Environment variables for DATABASE_URL and Google Sheets credentials
+- **Scheduling**: Ready for Heroku Scheduler (cron replacement)
+
+### Local Development Environment  
 - **Environment**: Python virtual environment (`venv/`)
 - **Database**: PostgreSQL (localhost:5432, db: contracts, user: scraper)
 - **Output**: Google Sheets + PostgreSQL database
 - **Scheduling**: Cron job for daily runs
 
 ## How to Run
+
+### Production (Heroku)
+```bash
+# Run scrapers manually on Heroku
+heroku run python orchestrator.py
+
+# View live app
+heroku open
+# Or visit: https://macontractscraper-18a0ccf5d2d6.herokuapp.com/
+
+# Check Heroku logs
+heroku logs --tail
+```
+
+### Local Development
 ```bash
 # Activate virtual environment
 source venv/bin/activate
@@ -34,11 +61,11 @@ source venv/bin/activate
 # Run all scrapers manually
 python orchestrator.py
 
-# Run the web UI
+# Run the web UI locally
 python app.py
 # Then open http://localhost:5001 in browser
 
-# Check logs
+# Check local logs
 tail cron.log
 tail log.txt
 ```
@@ -63,19 +90,32 @@ tail log.txt
 - Other states
 - Search functionality (fast follow after initial feedback)
 
+## Deployment (Heroku)
+- **Platform**: Heroku Basic ($7/month budget, using $5/month database)
+- **App Name**: macontractscraper
+- **Database**: PostgreSQL Essential-0 
+- **Environment Variables**: DATABASE_URL, GOOGLE_SHEETS_CREDENTIALS_JSON
+- **Deployment**: Git-based (push to heroku main branch)
+- **Status**: ✅ LIVE and operational
+
 ## File Structure
-- `orchestrator.py` - Main coordinator
-- `app.py` - Flask web server for UI
-- `run_scraper_cron.sh` - Reliable cron script
+- `orchestrator.py` - Main coordinator (production-ready with environment variables)
+- `app.py` - Flask web server for UI (production-ready)
+- `requirements.txt` - Python dependencies for Heroku
+- `Procfile` - Heroku deployment configuration
+- `runtime.txt` - Python version specification
+- `.env.example` - Environment variable template
+- `run_scraper_cron.sh` - Local cron script (not used in production)
 - `templates/index.html` - Web UI frontend
 - `scrapers/` - Individual city scrapers:
   - `somerville.py` - Somerville scraper
-  - `newton.py` - Newton scraper  
+  - `newton.py` - Newton scraper (temporarily disabled for Heroku)
   - `concord.py` - Concord scraper
+  - `worcester.py` - Worcester scraper (enhanced two-step)
+  - `boston.py` - Boston scraper (enhanced with UNSPSC mapping)
   - `cambridge.py` - Cambridge scraper (postponed)
-  - `cambridge_api.py` - Cambridge API utilities
-- `google_sheets_credentials.json` - Google API credentials
-- `cron.log` - Automated run logs
+- `google_sheets_credentials.json` - Google API credentials (local only)
+- `cron.log` - Local automated run logs
 
 ## Known Issues & Future Platforms
 - **Cambridge scraper**: Uses OpenGov.com platform with anti-scraping protection - postponed for later

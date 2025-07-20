@@ -14,17 +14,27 @@ import time
 def scrape():
     url = "https://www.newtonma.gov/government/purchasing/current-bids"
 
-    # Browser setup
+    # Browser setup for both local and Heroku environments
     options = Options()
     options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")  # Heroku compatibility
+    options.add_argument("--disable-background-timer-throttling")
+    options.add_argument("--disable-backgrounding-occluded-windows")
+    options.add_argument("--disable-renderer-backgrounding")
     options.add_argument("--window-size=1920,1080")
     options.add_argument(
         "user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/125.0.0.0 Safari/537.36"
     )
+    
+    # Set Chrome binary path for Heroku (buildpack sets this environment variable)
+    import os
+    chrome_bin = os.environ.get('GOOGLE_CHROME_BIN')
+    if chrome_bin:
+        options.binary_location = chrome_bin
 
     driver = webdriver.Chrome(options=options)
     try:

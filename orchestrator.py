@@ -1,5 +1,5 @@
 from scrapers import somerville
-#from scrapers.cambridge import scrape as scrape_cambridge
+#from scrapers.cambridge import scrape as scrape_cambridge  
 from scrapers.concord import scrape as scrape_concord
 from scrapers.newton import scrape as scrape_newton
 from scrapers.worcester import scrape as scrape_worcester
@@ -19,10 +19,8 @@ df_somerville = somerville.scrape()
 #print("🔍 Cambridge rows scraped:", len(df_cambridge))
 df_concord = scrape_concord()
 print("🔍 Concord rows scraped:", len(df_concord))
-# Temporarily disabled Newton scraper (requires Chrome on Heroku)
-# df_newton = scrape_newton()
-# print("🔍 Newton rows scraped:", len(df_newton))
-df_newton = pd.DataFrame()  # Empty dataframe for now
+df_newton = scrape_newton()
+print("🔍 Newton rows scraped:", len(df_newton))
 df_worcester = scrape_worcester()
 print("🔍 Worcester rows scraped:", len(df_worcester))
 df_boston = scrape_boston()
