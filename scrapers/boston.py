@@ -359,6 +359,18 @@ def extract_boston_due_date(content_text):
     """
     Extract due date using Boston-specific patterns
     """
+    # Look for "Closes MM/DD/YYYY - HH:MM AM/PM" (most common Boston format)
+    closes_match = re.search(r"Closes[:\s]*(\d{1,2}/\d{1,2}/\d{4})\s*-\s*(\d{1,2}:\d{2}\s*[AP]M)", content_text, re.IGNORECASE)
+    if closes_match:
+        date_part = closes_match.group(1)
+        time_part = closes_match.group(2)
+        return standardize_date_with_time(f"{date_part} {time_part}")
+    
+    # Look for "Closes MM/DD/YYYY" (date only)
+    closes_date_match = re.search(r"Closes[:\s]*(\d{1,2}/\d{1,2}/\d{4})", content_text, re.IGNORECASE)
+    if closes_date_match:
+        return standardize_date(closes_date_match.group(1))
+    
     # Look for "SOQ Submission Deadline: July 22, 2025"
     soq_match = re.search(r"SOQ Submission Deadline[:\s]*([A-Za-z]+ \d{1,2}, \d{4})", content_text, re.IGNORECASE)
     if soq_match:
@@ -487,6 +499,33 @@ def standardize_date(date_str):
         
     except Exception:
         return date_str
+
+def standardize_date_with_time(date_time_str):
+    """
+    Standardize Boston's date + time formats like "07/22/2025 12:00 PM"
+    """
+    if not date_time_str or date_time_str.strip() == "":
+        return None
+    
+    date_time_str = date_time_str.strip()
+    
+    try:
+        # Try parsing "MM/DD/YYYY HH:MM AM/PM"
+        date_obj = datetime.strptime(date_time_str, "%m/%d/%Y %I:%M %p")
+        return date_obj.strftime("%Y-%m-%d %I:%M %p")
+    except ValueError:
+        try:
+            # Try parsing "MM/DD/YYYY HH:MMAM/PM" (no space before AM/PM)
+            date_obj = datetime.strptime(date_time_str, "%m/%d/%Y %I:%M%p")
+            return date_obj.strftime("%Y-%m-%d %I:%M %p")
+        except ValueError:
+            # If time parsing fails, just return the date part
+            try:
+                date_part = date_time_str.split()[0]  # Get first part before space
+                return standardize_date(date_part)
+            except:
+                print(f"⚠️ Could not parse Boston date with time: '{date_time_str}'")
+                return date_time_str
 
 def determine_status(due_date_str):
     """
