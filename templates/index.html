@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contract Opportunities Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Contract Opportunities Portal</h1>
+                    <p class="text-gray-600 mt-1">Find relevant contracts for your service business</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-500">
+                        <span id="contract-count">Loading...</span> opportunities available
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="contractApp()">
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow-sm border p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Filter Opportunities</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Industry Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Industry</label>
+                    <select x-model="filters.industry" @change="applyFilters" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">All Industries</option>
+                        <template x-for="industry in availableFilters.industries" :key="industry">
+                            <option :value="industry" x-text="industry"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- City Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">City</label>
+                    <select x-model="filters.city" @change="applyFilters" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">All Cities</option>
+                        <template x-for="city in availableFilters.cities" :key="city">
+                            <option :value="city" x-text="city"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- Status Filter -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select x-model="filters.status" @change="applyFilters" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">All Statuses</option>
+                        <template x-for="status in availableFilters.statuses" :key="status">
+                            <option :value="status" x-text="status"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- Search -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                    <input 
+                        type="text" 
+                        x-model="filters.search" 
+                        @input="applyFilters" 
+                        placeholder="Search titles..."
+                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    >
+                </div>
+            </div>
+
+            <!-- Clear Filters -->
+            <div class="mt-4">
+                <button 
+                    @click="clearFilters" 
+                    class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                    Clear all filters
+                </button>
+                <span class="text-sm text-gray-500 ml-4" x-text="`Showing ${filteredContracts.length} of ${allContracts.length} opportunities`"></span>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div x-show="loading" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p class="text-gray-600 mt-2">Loading opportunities...</p>
+        </div>
+
+        <!-- Error State -->
+        <div x-show="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">Error loading contracts</h3>
+                    <p class="text-sm text-red-700 mt-1" x-text="error"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contract Cards -->
+        <div x-show="!loading && !error" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <template x-for="contract in filteredContracts" :key="contract.title">
+                <div class="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow duration-200">
+                    <!-- Card Header -->
+                    <div class="p-6 pb-4">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-lg font-semibold text-gray-900 leading-tight" x-text="contract.title"></h3>
+                            </div>
+                            <div class="ml-3 flex-shrink-0">
+                                <span 
+                                    class="inline-flex px-2 py-1 text-xs font-medium rounded-full"
+                                    :class="{
+                                        'bg-red-100 text-red-800': contract.urgency === 'high',
+                                        'bg-yellow-100 text-yellow-800': contract.urgency === 'medium',
+                                        'bg-green-100 text-green-800': contract.urgency === 'low'
+                                    }"
+                                    x-text="contract.urgency === 'high' ? 'Due Soon' : contract.urgency === 'medium' ? 'Due This Month' : 'Not Urgent'"
+                                ></span>
+                            </div>
+                        </div>
+
+                        <!-- Industry & City -->
+                        <div class="flex items-center text-sm text-gray-600 mb-3">
+                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium" x-text="contract.industry"></span>
+                            <span class="mx-2">•</span>
+                            <span x-text="contract.city"></span>
+                        </div>
+
+                        <!-- Contract Value -->
+                        <div class="text-lg font-semibold text-gray-900 mb-3" x-text="contract.estimated_value"></div>
+
+                        <!-- Dates -->
+                        <div class="space-y-1 text-sm text-gray-600">
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar-plus w-4 text-gray-400 mr-2"></i>
+                                <span>Released: </span>
+                                <span class="font-medium ml-1" x-text="contract.release_date"></span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fas fa-calendar-times w-4 text-gray-400 mr-2"></i>
+                                <span>Due: </span>
+                                <span class="font-medium ml-1" x-text="contract.due_date"></span>
+                                <span 
+                                    x-show="contract.days_until_due !== null && contract.days_until_due >= 0" 
+                                    class="text-xs text-gray-500 ml-1"
+                                    x-text="`(${contract.days_until_due} days)`"
+                                ></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Footer -->
+                    <div class="px-6 py-4 bg-gray-50 border-t flex items-center justify-between">
+                        <div class="text-sm text-gray-600">
+                            <span x-text="contract.status"></span>
+                            <span class="mx-1">•</span>
+                            <span x-text="contract.source_type"></span>
+                        </div>
+                        <div class="flex space-x-2">
+                            <!-- View Details Button -->
+                            <a 
+                                :href="contract.source_url" 
+                                target="_blank"
+                                class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors duration-200"
+                            >
+                                <i class="fas fa-external-link-alt mr-1.5"></i>
+                                View Details
+                            </a>
+                            <!-- Download Docs Button (Placeholder) -->
+                            <button 
+                                @click="downloadDocs(contract)"
+                                class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 transition-colors duration-200"
+                                title="Download documents (coming soon)"
+                            >
+                                <i class="fas fa-download mr-1.5"></i>
+                                Docs
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- No Results -->
+        <div x-show="!loading && !error && filteredContracts.length === 0" class="text-center py-12">
+            <div class="max-w-md mx-auto">
+                <i class="fas fa-search text-4xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No opportunities found</h3>
+                <p class="text-gray-600">Try adjusting your filters to see more results.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function contractApp() {
+            return {
+                loading: true,
+                error: null,
+                allContracts: [],
+                filteredContracts: [],
+                availableFilters: {
+                    industries: [],
+                    cities: [],
+                    statuses: []
+                },
+                filters: {
+                    industry: '',
+                    city: '',
+                    status: '',
+                    search: ''
+                },
+
+                async init() {
+                    await this.loadFilters();
+                    await this.loadContracts();
+                },
+
+                async loadFilters() {
+                    try {
+                        const response = await fetch('/api/filters');
+                        const data = await response.json();
+                        this.availableFilters = data;
+                    } catch (err) {
+                        console.error('Error loading filters:', err);
+                    }
+                },
+
+                async loadContracts() {
+                    try {
+                        this.loading = true;
+                        this.error = null;
+                        
+                        const response = await fetch('/api/contracts');
+                        const data = await response.json();
+                        
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        
+                        this.allContracts = data.contracts;
+                        this.filteredContracts = [...this.allContracts];
+                        
+                        // Update contract count in header
+                        document.getElementById('contract-count').textContent = data.total;
+                        
+                    } catch (err) {
+                        this.error = err.message;
+                        console.error('Error loading contracts:', err);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                applyFilters() {
+                    this.filteredContracts = this.allContracts.filter(contract => {
+                        // Industry filter
+                        if (this.filters.industry && contract.industry !== this.filters.industry) {
+                            return false;
+                        }
+                        
+                        // City filter
+                        if (this.filters.city && contract.city !== this.filters.city) {
+                            return false;
+                        }
+                        
+                        // Status filter
+                        if (this.filters.status && contract.status !== this.filters.status) {
+                            return false;
+                        }
+                        
+                        // Search filter
+                        if (this.filters.search && !contract.title.toLowerCase().includes(this.filters.search.toLowerCase())) {
+                            return false;
+                        }
+                        
+                        return true;
+                    });
+                },
+
+                clearFilters() {
+                    this.filters = {
+                        industry: '',
+                        city: '',
+                        status: '',
+                        search: ''
+                    };
+                    this.applyFilters();
+                },
+
+                downloadDocs(contract) {
+                    // Placeholder function for document downloads
+                    alert('Document download functionality coming soon!');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
