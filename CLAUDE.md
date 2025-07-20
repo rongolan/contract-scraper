@@ -10,13 +10,13 @@ Building a comprehensive portal for all contract opportunities for service busin
 - **Target Users**: Service businesses (landscaping, construction, plumbing, electrical, etc.)
 
 ## Working Components
-- **4 operational scrapers**: Somerville, Concord, Worcester, Boston (enhanced two-step scraping)
-- **Newton scraper**: Temporarily disabled (requires Chrome setup for Heroku deployment)
-- **Production database**: PostgreSQL on Heroku (Essential-0 plan, $5/month)
+- **5 operational scrapers**: Somerville, Concord, Worcester, Boston, Newton (all enhanced with two-step scraping)
+- **Production database**: PostgreSQL on Heroku (Essential-0 plan, $5/month) 
+- **Automated scheduling**: Heroku Scheduler running twice daily (6 AM & 5 PM EST)
 - **Data integration**: Google Sheets + PostgreSQL database with environment variables
 - **Advanced data cleaning**: Date standardization, industry classification, contract values
 - **Web UI**: Flask backend with responsive frontend, live filtering, urgency indicators
-- **Enhanced scraping**: Boston-specific field mapping (UNSPSC codes, Type classification)
+- **Enhanced scraping**: Boston-specific field mapping (UNSPSC codes, Closes field extraction)
 
 ## Scraper Standards
 - **Two-step approach**: Always scrape main table + individual bid pages when available
@@ -28,9 +28,9 @@ Building a comprehensive portal for all contract opportunities for service busin
 ### Production Environment (Heroku)
 - **Hosting**: Heroku (macontractscraper app)
 - **Database**: PostgreSQL Essential-0 ($5/month, 10k rows, 20 connections)
-- **Environment**: Python 3.11 with managed dependencies
+- **Environment**: Python 3.11 with managed dependencies + Chrome/ChromeDriver buildpacks
 - **Security**: Environment variables for DATABASE_URL and Google Sheets credentials
-- **Scheduling**: Ready for Heroku Scheduler (cron replacement)
+- **Scheduling**: Heroku Scheduler running twice daily (6 AM & 5 PM EST / 10:00 & 21:00 UTC)
 
 ### Local Development Environment  
 - **Environment**: Python virtual environment (`venv/`)
@@ -70,18 +70,19 @@ tail cron.log
 tail log.txt
 ```
 
-## Current Data Quality Issues (In Progress)
+## Current Data Quality Status
 1. **Date formats** - ✅ COMPLETED: Standardized to YYYY-MM-DD H:MM AM/PM format with TBD and Month-Year support
-2. **Title formatting** - Mixed cases, weird characters (partially fixed with regex) - GOOD ENOUGH FOR MVP
-3. **Industry classification** - ✅ COMPLETED: AI-powered classification into 20+ service business categories
+2. **Title formatting** - ✅ COMPLETED: Mixed cases, weird characters (partially fixed with regex) - GOOD ENOUGH FOR MVP
+3. **Industry classification** - ✅ BASIC COMPLETED: Keyword-based classification into 20+ service business categories (future: LLM enhancement)
 4. **Contract values** - ✅ PARTIALLY COMPLETED: Concord scraper extracts values when available; Newton uses open pricing; Somerville upcoming bids have values
 5. **Bid page URLs** - ✅ COMPLETED: All cities now provide clickable links to individual bid pages for UI
+6. **Boston due dates** - ✅ COMPLETED: Now properly extracts from "Closes" field instead of showing TBD
 
-## Next Steps
-1. **User Testing**: ✅ UI COMPLETED - Show prototype to local service businesses for focused feedback
-2. **Enhanced Scraping**: Extract contract values from PDFs/linked documents (Somerville open bids)
+## Next Steps (Post-Launch)
+1. **User Testing**: ✅ READY - Show live app to local service businesses for focused feedback
+2. **Industry Classification Enhancement**: Implement LLM-based classification for better accuracy
 3. **UI Improvements**: Iterate based on real user feedback
-4. **Additional Scrapers**: Expand to more Massachusetts municipalities
+4. **Additional Scrapers**: Expand to more Massachusetts municipalities (Quincy next)
 5. **Document Downloads**: Implement PDF document download functionality
 
 ## Future Expansion
