@@ -130,32 +130,45 @@ def scrape_individual_bid(bid_url):
                 if industry_match:
                     enhanced_data["Industry"] = industry_match.group(1).strip()
         
-        # Extract Open Date - look for "Open Date:" in bold text
+        # Extract Open Date - look for structured field-bid-posting-open-date
         open_date_found = False
-        # Look for bold text containing "Open Date:"
-        bold_elements = soup.find_all(['b', 'strong'])
-        for bold in bold_elements:
-            if bold and 'open date' in bold.get_text().lower():
-                # Find the next sibling or nearby text that contains the date
-                next_sibling = bold.next_sibling
-                if next_sibling:
-                    # Check if next sibling is text and contains date
-                    if hasattr(next_sibling, 'strip'):
-                        date_text = next_sibling.strip()
-                        date_match = re.search(r"(\d{2}/\d{2}/\d{4})", date_text)
+        
+        # Primary method: Look for the structured open date field
+        open_date_field = soup.find("div", class_=re.compile(r"field-bid-posting-open-date"))
+        if open_date_field:
+            time_element = open_date_field.find("time")
+            if time_element:
+                date_text = time_element.get_text(strip=True)
+                date_match = re.search(r"(\d{2}/\d{2}/\d{4})", date_text)
+                if date_match:
+                    enhanced_data["Release Date"] = standardize_date(date_match.group(1))
+                    open_date_found = True
+        
+        # Fallback: Look for bold text containing "Open Date:"
+        if not open_date_found:
+            bold_elements = soup.find_all(['b', 'strong'])
+            for bold in bold_elements:
+                if bold and 'open date' in bold.get_text().lower():
+                    # Find the next sibling or nearby text that contains the date
+                    next_sibling = bold.next_sibling
+                    if next_sibling:
+                        # Check if next sibling is text and contains date
+                        if hasattr(next_sibling, 'strip'):
+                            date_text = next_sibling.strip()
+                            date_match = re.search(r"(\d{2}/\d{2}/\d{4})", date_text)
+                            if date_match:
+                                enhanced_data["Release Date"] = standardize_date(date_match.group(1))
+                                open_date_found = True
+                                break
+                        # Also check parent element text
+                        parent_text = bold.parent.get_text() if bold.parent else ""
+                        date_match = re.search(r"open date:\s*(\d{2}/\d{2}/\d{4})", parent_text, re.IGNORECASE)
                         if date_match:
                             enhanced_data["Release Date"] = standardize_date(date_match.group(1))
                             open_date_found = True
                             break
-                    # Also check parent element text
-                    parent_text = bold.parent.get_text() if bold.parent else ""
-                    date_match = re.search(r"open date:\s*(\d{2}/\d{2}/\d{4})", parent_text, re.IGNORECASE)
-                    if date_match:
-                        enhanced_data["Release Date"] = standardize_date(date_match.group(1))
-                        open_date_found = True
-                        break
         
-        # Fallback: look for any text containing "Open Date"
+        # Second fallback: look for any text containing "Open Date"
         if not open_date_found:
             open_date_element = soup.find(string=re.compile(r"Open Date|Issue Date|Posted", re.IGNORECASE))
             if open_date_element:

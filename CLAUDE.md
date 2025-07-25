@@ -85,6 +85,10 @@ tail log.txt
 4. **Additional Scrapers**: Expand to more Massachusetts municipalities (Quincy next)
 5. **Document Downloads**: Implement PDF document download functionality
 
+## Recent Fixes (July 25, 2025)
+- **Somerville scraper**: ✅ FIXED - Enhanced title cleaning with improved regex to remove special characters and normalize formatting
+- **Worcester scraper**: ✅ FIXED - Fixed Open Date extraction from individual bid pages (now properly extracts from field-bid-posting-open-date structure)
+
 ## Future Expansion
 - Additional municipalities in MA
 - Commercial opportunities (hospitals, business parks, corporate RFPs)
