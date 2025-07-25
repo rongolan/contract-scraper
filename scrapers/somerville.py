@@ -2,6 +2,25 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime
+import re
+
+def clean_title(title):
+    """
+    Clean Somerville titles by removing IFB#, RFP# prefixes and numbers
+    Examples:
+    "RFP # 26-02 Water & Sewer Director & Inspectional Services Director Search" 
+    -> "Water & Sewer Director & Inspectional Services Director Search"
+    "IFB# 25-69 Supply & Delivery of Stone & Gravel" 
+    -> "Supply & Delivery of Stone & Gravel"
+    """
+    if not title:
+        return title
+    
+    # Remove IFB# or RFP# patterns with numbers
+    # Patterns to match: "IFB# 25-69", "RFP # 26-02", "IFB #25-69", etc.
+    cleaned = re.sub(r'^(IFB|RFP)\s*#?\s*[\d-]+\s*', '', title, flags=re.IGNORECASE)
+    
+    return cleaned.strip()
 
 def scrape():
     url = "https://www.somervillema.gov/departments/finance/procurement-and-contracting-services"
@@ -86,6 +105,10 @@ def scrape():
         "Bid Notice": "Document_PDF"  # Keep PDF info as separate field
     })
 
+    # Clean titles by removing IFB#/RFP# prefixes
+    if "Title" in df_web_renamed.columns:
+        df_web_renamed["Title"] = df_web_renamed["Title"].apply(clean_title)
+    
     df_web_renamed["Department"] = None
     df_web_renamed["Industry"] = None
     df_web_renamed["City"] = "Somerville"
@@ -108,6 +131,10 @@ def scrape():
             "MONTH": "Month",
             "YEAR": "Year"
         })
+        # Clean titles for Excel data too
+        if "Title" in df_excel_renamed.columns:
+            df_excel_renamed["Title"] = df_excel_renamed["Title"].apply(clean_title)
+        
         df_excel_renamed["Release Date"] = df_excel_renamed["Month"].astype(str) + " " + df_excel_renamed["Year"].astype(str)
         df_excel_renamed["Due Date"] = None
         df_excel_renamed["Instructions"] = None
@@ -138,10 +165,27 @@ def scrape():
         if pd.isna(due_date_str) or due_date_str.strip() == "":
             return "Upcoming"
         try:
-            due = datetime.strptime(due_date_str, "%m/%d/%Y - %I:%M%p")
+            # Handle format with day of week: "Wed, 07/09/2025 - 12:00pm"
+            if ", " in due_date_str and " - " in due_date_str:
+                # Extract just the date and time part, removing day of week
+                date_time_part = due_date_str.split(", ", 1)[1]  # Gets "07/09/2025 - 12:00pm"
+                due = datetime.strptime(date_time_part, "%m/%d/%Y - %I:%M%p")
+            else:
+                # Original format: "07/09/2025 - 12:00pm"
+                due = datetime.strptime(due_date_str, "%m/%d/%Y - %I:%M%p")
             return "Open" if due > datetime.now() else "Closed"
         except ValueError:
-            return "Open"
+            try:
+                # Try alternative formats
+                if ", " in due_date_str:
+                    date_time_part = due_date_str.split(", ", 1)[1]
+                    # Handle lowercase am/pm: "12:00pm"
+                    due = datetime.strptime(date_time_part, "%m/%d/%Y - %I:%M%p")
+                else:
+                    due = datetime.strptime(due_date_str, "%m/%d/%Y - %I:%M%p")
+                return "Open" if due > datetime.now() else "Closed"
+            except ValueError:
+                return "Open"
 
     df_combined["status"] = df_combined["Due Date"].apply(determine_status)
 
