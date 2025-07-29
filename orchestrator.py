@@ -4,6 +4,7 @@ from scrapers.concord import scrape as scrape_concord
 from scrapers.newton import scrape as scrape_newton
 from scrapers.worcester import scrape as scrape_worcester
 from scrapers.boston import scrape as scrape_boston
+from scrapers.quincy import scrape as scrape_quincy
 import pandas as pd
 import dateparser
 from sqlalchemy import create_engine
@@ -25,9 +26,11 @@ df_worcester = scrape_worcester()
 print("🔍 Worcester rows scraped:", len(df_worcester))
 df_boston = scrape_boston()
 print("🔍 Boston rows scraped:", len(df_boston))
+df_quincy = scrape_quincy()
+print("🔍 Quincy rows scraped:", len(df_quincy))
 
 # Combine safely
-dfs = [df for df in [df_somerville, df_concord, df_newton, df_worcester, df_boston] if not df.empty]
+dfs = [df for df in [df_somerville, df_concord, df_newton, df_worcester, df_boston, df_quincy] if not df.empty]
 if dfs:
     df_combined = pd.concat(dfs, ignore_index=True)
     # --- Normalize and bucket Status column ---
