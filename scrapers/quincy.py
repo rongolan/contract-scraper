@@ -56,7 +56,7 @@ def scrape():
             if individual_bid_url.startswith("/"):
                 individual_bid_url = base_url + individual_bid_url
             else:
-                individual_bid_url = f"{base_url}/departments/purchasing/{individual_bid_url}"
+                individual_bid_url = f"{base_url}/{individual_bid_url}"
         
         # Extract dates from surrounding text
         issue_date = None
