@@ -9,32 +9,18 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <!-- Header -->
-    <header class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Contract Opportunities Portal</h1>
-                    <p class="text-gray-600 mt-1">Find relevant contracts for your service business</p>
-                </div>
-                <div class="text-right">
-                    <div class="text-sm text-gray-500">
-                        <span id="contract-count">Loading...</span> opportunities available
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
     <!-- Navigation -->
     <nav class="bg-white shadow-sm border-b" x-data="navigationApp()">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
+            <div class="flex items-center justify-between h-20">
                 <div class="flex items-center space-x-8">
-                    <a href="/" @click.prevent="router.navigate('/')" class="text-xl font-bold text-gray-900">
-                        Contract Portal
-                    </a>
-                    <div class="hidden md:flex space-x-4">
+                    <div>
+                        <a href="/" @click.prevent="router.navigate('/')" class="text-2xl font-bold text-gray-900">
+                            Contract Opportunities Portal
+                        </a>
+                        <p class="text-gray-600 text-sm mt-1">Find relevant contracts for your service business</p>
+                    </div>
+                    <div class="hidden md:flex space-x-6 ml-8">
                         <a href="/contracts" @click.prevent="router.navigate('/contracts')" 
                            :class="router.currentRoute === '/contracts' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                            class="border-b-2 px-1 py-2 text-sm font-medium transition-colors duration-200">
@@ -47,8 +33,10 @@
                         </a>
                     </div>
                 </div>
-                <div class="text-sm text-gray-500">
-                    <span id="contract-count">Loading...</span> opportunities available
+                <div class="text-right">
+                    <div class="text-sm text-gray-500">
+                        <span x-text="stats.totalContracts || 'Loading...'"></span> opportunities available
+                    </div>
                 </div>
             </div>
         </div>
@@ -413,12 +401,20 @@
         function navigationApp() {
             return {
                 router: router,
+                stats: {
+                    totalContracts: 0,
+                    citiesCount: 0,
+                    industriesCount: 0
+                },
                 
                 init() {
+                    // Listen for route changes and force re-render
                     router.addListener(() => {
+                        // Force Alpine to re-evaluate by updating a reactive property
                         this.$nextTick(() => {
-                            // Force Alpine to update bindings
-                            this.$refresh();
+                            this.$el.querySelectorAll('[x-show]').forEach(el => {
+                                Alpine.evaluate(el, el.getAttribute('x-show'));
+                            });
                         });
                     });
                 }
@@ -452,11 +448,22 @@
                 featuredCities: [],
 
                 async init() {
-                    // Set up router listener for filter updates
-                    router.addListener(() => {
+                    // Set up router listener for view updates and filter loading
+                    router.addListener((route) => {
                         this.$nextTick(() => {
-                            this.$refresh();
-                            if (router.currentRoute === '/contracts') {
+                            // Force re-evaluation of x-show directives
+                            this.$el.querySelectorAll('[x-show]').forEach(el => {
+                                const expression = el.getAttribute('x-show');
+                                const result = Alpine.evaluate(el, expression);
+                                if (result) {
+                                    el.style.display = '';
+                                } else {
+                                    el.style.display = 'none';
+                                }
+                            });
+                            
+                            // Load filters from URL if on contracts page
+                            if (route === '/contracts') {
                                 this.loadFiltersFromURL();
                             }
                         });
@@ -465,10 +472,13 @@
                     await this.loadFilters();
                     await this.loadContracts();
                     
-                    // Load URL parameters if we're on contracts page
+                    // Load URL parameters if we're on contracts page initially
                     if (router.currentRoute === '/contracts') {
                         this.loadFiltersFromURL();
                     }
+                    
+                    // Update navigation stats
+                    this.updateNavigationStats();
                 },
 
                 async loadFilters() {
@@ -506,8 +516,8 @@
                         // Update stats
                         this.stats.totalContracts = data.total;
                         
-                        // Update contract count in header
-                        document.getElementById('contract-count').textContent = data.total;
+                        // Update navigation stats
+                        this.updateNavigationStats();
                         
                     } catch (err) {
                         this.error = err.message;
@@ -567,6 +577,14 @@
                 downloadDocs(contract) {
                     // Placeholder function for document downloads
                     alert('Document download functionality coming soon!');
+                },
+
+                updateNavigationStats() {
+                    // Update the navigation component's stats
+                    const navComponent = document.querySelector('[x-data="navigationApp()"]');
+                    if (navComponent && navComponent._x_dataStack && navComponent._x_dataStack[0]) {
+                        Object.assign(navComponent._x_dataStack[0].stats, this.stats);
+                    }
                 }
             }
         }
