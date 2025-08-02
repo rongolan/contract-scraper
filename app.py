@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, redirect, url_for
 from flask_cors import CORS
 import psycopg2
 import psycopg2.extras
@@ -37,7 +37,28 @@ def get_db_connection():
 
 @app.route('/')
 def index():
-    """Serve the main UI"""
+    """Serve the main UI - Landing page"""
+    return render_template('index.html')
+
+@app.route('/contracts')
+def contracts():
+    """Serve the contracts page"""
+    return render_template('index.html')
+
+@app.route('/home')
+def home():
+    """Serve the home page (future authenticated user page)"""
+    return render_template('index.html')
+
+# Catch-all route for unknown paths - redirect to landing page
+@app.route('/<path:path>')
+def catch_all(path):
+    """Handle unknown routes by redirecting to appropriate pages"""
+    # If path starts with 'api/', return 404 for API routes
+    if path.startswith('api/'):
+        return jsonify({'error': 'API endpoint not found'}), 404
+    
+    # For other unknown paths, serve the main template and let client-side routing handle it
     return render_template('index.html')
 
 @app.route('/api/contracts')

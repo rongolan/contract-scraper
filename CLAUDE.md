@@ -78,16 +78,46 @@ tail log.txt
 5. **Bid page URLs** - ✅ COMPLETED: All cities now provide clickable links to individual bid pages for UI
 6. **Boston due dates** - ✅ COMPLETED: Now properly extracts from "Closes" field instead of showing TBD
 
-## Next Steps (Post-Launch)
-1. **User Testing**: ✅ READY - Show live app to local service businesses for focused feedback
-2. **Industry Classification Enhancement**: Implement LLM-based classification for better accuracy
-3. **UI Improvements**: Iterate based on real user feedback
-4. **Additional Scrapers**: Expand to more Massachusetts municipalities (Quincy next)
-5. **Document Downloads**: Implement PDF document download functionality
+## Product Development Roadmap
+Based on strategic planning session July 29, 2025:
 
-## Recent Fixes (July 25, 2025)
+### **Phase 1: URL Structure & Routing Foundation** 🚧 NEXT
+- Implement client-side routing for shareable URLs
+- Structure: `/` (landing), `/app` (contract search), `/app?city=Boston&industry=Construction` (filtered searches)
+- Foundation for user account system
+
+### **Phase 2: User Accounts & Authentication** 
+- Email/password authentication system
+- User preferences and saved searches
+- Role-based permissions (user/admin)
+- Admin panel for manual contract data edits
+- Database schema: `users`, `user_preferences`, `user_sessions`
+
+### **Phase 3: Landing Page & Marketing**
+- Professional landing page explaining value proposition
+- Sample data showcase
+- Pricing tier information (free vs paid)
+- SEO optimization
+
+### **Phase 4: Database Architecture Overhaul**
+- Move from full table replacement to incremental updates
+- Contract history tracking and status changes
+- Manual edit protection with `is_manually_edited` flags  
+- More efficient scraper resource usage
+
+### **Phase 5: Performance Optimizations**
+- Async scraper execution for faster runs
+- Advanced error handling and retry logic
+
+## Previous Milestones (Completed)
+1. **User Testing**: ✅ READY - Show live app to local service businesses for focused feedback
+2. **Six Municipality Coverage**: ✅ COMPLETED - Somerville, Concord, Worcester, Boston, Newton, Quincy operational
+3. **Enhanced Data Quality**: ✅ COMPLETED - Release dates, industry classification, two-step scraping
+
+## Recent Fixes (July 29, 2025)
 - **Somerville scraper**: ✅ FIXED - Enhanced title cleaning with improved regex to remove special characters and normalize formatting
 - **Worcester scraper**: ✅ FIXED - Fixed Open Date extraction from individual bid pages (now properly extracts from field-bid-posting-open-date structure)
+- **Quincy scraper**: ✅ FIXED - Fixed URL construction bug preventing individual bid page access (now successfully scraping enhanced data from all bid pages)
 
 ## Future Expansion
 - Additional municipalities in MA
