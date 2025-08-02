@@ -336,6 +336,7 @@
                 
                 // Listen for browser back/forward buttons
                 window.addEventListener('popstate', (e) => {
+                    // Always use just the pathname, not the full URL with query params
                     this.currentRoute = this.normalizeRoute(window.location.pathname);
                     this.notifyListeners();
                 });
@@ -353,8 +354,12 @@
             }
 
             navigate(path) {
-                if (this.currentRoute !== path) {
-                    this.currentRoute = path;
+                // Extract just the pathname from the full URL
+                const url = new URL(path, window.location.origin);
+                const pathname = url.pathname;
+                
+                if (this.currentRoute !== pathname) {
+                    this.currentRoute = pathname;
                     history.pushState({}, '', path);
                     this.notifyListeners();
                 }
@@ -391,6 +396,9 @@
                 if (window.location.href !== window.location.origin + newURL) {
                     history.replaceState({}, '', newURL);
                 }
+                
+                // Important: Don't update currentRoute here - it should stay as just the path
+                // this.currentRoute should only be the pathname (e.g., '/contracts'), not the full URL
             }
         }
 
