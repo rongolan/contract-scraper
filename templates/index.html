@@ -33,14 +33,70 @@
                         </a>
                     </div>
                 </div>
-                <div class="text-right">
-                    <div class="text-sm text-gray-500">
-                        <span x-text="stats.totalContracts || 'Loading...'"></span> opportunities available
+                <div class="flex items-center space-x-4">
+                    <!-- Authentication Status -->
+                    <template x-if="auth.user">
+                        <div class="flex items-center space-x-4">
+                            <span class="text-sm text-gray-700">
+                                Welcome, <span x-text="auth.user.business_name || auth.user.email"></span>
+                            </span>
+                            <div class="relative" x-data="{ open: false }">
+                                <button @click="open = !open" class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <i class="fas fa-user-circle text-2xl text-gray-600"></i>
+                                </button>
+                                <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                                    <a href="/profile" @click.prevent="router.navigate('/profile')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+                                    <a href="/settings" @click.prevent="router.navigate('/settings')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                                    <template x-if="auth.user && auth.user.role === 'admin'">
+                                        <a href="/admin" @click.prevent="router.navigate('/admin')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin Panel</a>
+                                    </template>
+                                    <div class="border-t border-gray-100"></div>
+                                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sign Out</a>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="!auth.user">
+                        <div class="flex items-center space-x-3">
+                            <button @click="router.navigate('/login')" class="text-sm text-gray-700 hover:text-gray-900">
+                                Sign In
+                            </button>
+                            <button @click="router.navigate('/signup')" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
+                                Sign Up
+                            </button>
+                        </div>
+                    </template>
+                    
+                    <!-- Stats -->
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">
+                            <span x-text="stats.totalContracts || 'Loading...'"></span> opportunities available
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="fixed top-4 right-4 z-50 space-y-2" x-data="{ show: true }" x-show="show">
+                {% for category, message in messages %}
+                    <div class="max-w-sm p-4 rounded-lg shadow-lg {% if category == 'error' %}bg-red-100 border border-red-400 text-red-700{% elif category == 'success' %}bg-green-100 border border-green-400 text-green-700{% else %}bg-blue-100 border border-blue-400 text-blue-700{% endif %}">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium">{{ message }}</p>
+                            </div>
+                            <button @click="show = false" class="ml-3 flex-shrink-0">
+                                <i class="fas fa-times text-sm opacity-60 hover:opacity-100"></i>
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
 
     <!-- Main Content Container -->
     <main id="app-container" class="min-h-screen" x-data="appData()">
@@ -318,6 +374,297 @@
             </div>
         </div>
 
+        <!-- Login View -->
+        <div x-show="router.currentRoute === '/login'" class="bg-gray-50 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-md w-full space-y-8">
+                <div>
+                    <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        Sign in to your account
+                    </h2>
+                    <p class="mt-2 text-center text-sm text-gray-600">
+                        Or
+                        <a href="/signup" @click.prevent="router.navigate('/signup')" class="font-medium text-blue-600 hover:text-blue-500">
+                            create a new account
+                        </a>
+                    </p>
+                </div>
+                <form class="mt-8 space-y-6" action="/login" method="POST">
+                    <div class="rounded-md shadow-sm -space-y-px">
+                        <div>
+                            <label for="email" class="sr-only">Email address</label>
+                            <input id="email" name="email" type="email" required 
+                                   class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" 
+                                   placeholder="Email address">
+                        </div>
+                        <div>
+                            <label for="password" class="sr-only">Password</label>
+                            <input id="password" name="password" type="password" required 
+                                   class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" 
+                                   placeholder="Password">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input id="remember" name="remember" type="checkbox" 
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="remember" class="ml-2 block text-sm text-gray-900">
+                                Remember me
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button type="submit" 
+                                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Sign in
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Signup View -->
+        <div x-show="router.currentRoute === '/signup'" class="bg-gray-50 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-md w-full space-y-8">
+                <div>
+                    <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        Create your account
+                    </h2>
+                    <p class="mt-2 text-center text-sm text-gray-600">
+                        Or
+                        <a href="/login" @click.prevent="router.navigate('/login')" class="font-medium text-blue-600 hover:text-blue-500">
+                            sign in to existing account
+                        </a>
+                    </p>
+                </div>
+                <form class="mt-8 space-y-6" action="/signup" method="POST">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="signup-email" class="block text-sm font-medium text-gray-700">Email address</label>
+                            <input id="signup-email" name="email" type="email" required 
+                                   class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                                   placeholder="your@email.com">
+                        </div>
+                        
+                        <div>
+                            <label for="business-name" class="block text-sm font-medium text-gray-700">Business Name</label>
+                            <input id="business-name" name="business_name" type="text" 
+                                   class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                                   placeholder="Your Business Name">
+                        </div>
+                        
+                        <div>
+                            <label for="business-type" class="block text-sm font-medium text-gray-700">Business Type</label>
+                            <select id="business-type" name="business_type" 
+                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <option value="">Select a business type</option>
+                                <option value="Landscaping">Landscaping</option>
+                                <option value="Construction">Construction</option>
+                                <option value="Plumbing">Plumbing</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="HVAC">HVAC</option>
+                                <option value="Cleaning Services">Cleaning Services</option>
+                                <option value="Security Services">Security Services</option>
+                                <option value="IT Services">IT Services</option>
+                                <option value="Consulting">Consulting</option>
+                                <option value="Engineering">Engineering</option>
+                                <option value="Architecture">Architecture</option>
+                                <option value="Transportation">Transportation</option>
+                                <option value="Food Services">Food Services</option>
+                                <option value="Professional Services">Professional Services</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="phone" class="block text-sm font-medium text-gray-700">Phone (Optional)</label>
+                                <input id="phone" name="phone" type="tel" 
+                                       class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                                       placeholder="(555) 123-4567">
+                            </div>
+                            <div>
+                                <label for="city" class="block text-sm font-medium text-gray-700">City (Optional)</label>
+                                <input id="city" name="city" type="text" 
+                                       class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                                       placeholder="Boston">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="signup-password" class="block text-sm font-medium text-gray-700">Password</label>
+                            <input id="signup-password" name="password" type="password" required 
+                                   class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                                   placeholder="Password">
+                            <p class="mt-1 text-sm text-gray-500">Must be at least 8 characters with uppercase, lowercase, and number</p>
+                        </div>
+                        
+                        <div>
+                            <label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                            <input id="confirm-password" name="confirm_password" type="password" required 
+                                   class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" 
+                                   placeholder="Confirm Password">
+                        </div>
+                    </div>
+
+                    <div>
+                        <button type="submit" 
+                                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Create Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Profile View -->
+        <div x-show="router.currentRoute === '/profile'" class="bg-gray-50 min-h-screen">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="mb-6">
+                    <h1 class="text-3xl font-bold text-gray-900">Your Profile</h1>
+                    <p class="text-gray-600 mt-1">Manage your account information and preferences</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Account Information</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" x-data="{ profile: null }" x-init="loadProfile()">
+                        <template x-if="profile">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                                    <p class="mt-1 text-sm text-gray-900" x-text="profile.user.email"></p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Business Name</label>
+                                    <p class="mt-1 text-sm text-gray-900" x-text="profile.user.business_name || 'Not specified'"></p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Business Type</label>
+                                    <p class="mt-1 text-sm text-gray-900" x-text="profile.user.business_type || 'Not specified'"></p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Phone</label>
+                                    <p class="mt-1 text-sm text-gray-900" x-text="profile.user.phone || 'Not specified'"></p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">City</label>
+                                    <p class="mt-1 text-sm text-gray-900" x-text="profile.user.city || 'Not specified'"></p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Member Since</label>
+                                    <p class="mt-1 text-sm text-gray-900" x-text="new Date(profile.user.created_at).toLocaleDateString()"></p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings View -->
+        <div x-show="router.currentRoute === '/settings'" class="bg-gray-50 min-h-screen">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="mb-6">
+                    <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
+                    <p class="text-gray-600 mt-1">Customize your notification preferences and contract filters</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Notification Preferences</h2>
+                    <p class="text-gray-600 mb-4">Configure how and when you receive notifications about new contracts.</p>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="email-notifications" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="email-notifications" class="ml-2 block text-sm text-gray-900">
+                                Email notifications for new contracts
+                            </label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="urgency-alerts" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="urgency-alerts" class="ml-2 block text-sm text-gray-900">
+                                Urgent alerts for contracts closing soon
+                            </label>
+                        </div>
+                        <div>
+                            <label for="notification-frequency" class="block text-sm font-medium text-gray-700">Notification Frequency</label>
+                            <select id="notification-frequency" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                <option value="immediate">Immediate</option>
+                                <option value="daily">Daily Digest</option>
+                                <option value="weekly">Weekly Summary</option>
+                                <option value="never">Never</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
+                            Save Preferences
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin View -->
+        <div x-show="router.currentRoute === '/admin'" class="bg-gray-50 min-h-screen">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="mb-6">
+                    <h1 class="text-3xl font-bold text-gray-900">Admin Panel</h1>
+                    <p class="text-gray-600 mt-1">Manage contracts and system settings</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <div class="flex items-center">
+                            <i class="fas fa-file-contract text-2xl text-blue-600 mr-3"></i>
+                            <div>
+                                <p class="text-2xl font-bold text-gray-900" x-text="stats.totalContracts"></p>
+                                <p class="text-gray-600">Total Contracts</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <div class="flex items-center">
+                            <i class="fas fa-users text-2xl text-green-600 mr-3"></i>
+                            <div>
+                                <p class="text-2xl font-bold text-gray-900">0</p>
+                                <p class="text-gray-600">Registered Users</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <div class="flex items-center">
+                            <i class="fas fa-city text-2xl text-purple-600 mr-3"></i>
+                            <div>
+                                <p class="text-2xl font-bold text-gray-900" x-text="stats.citiesCount"></p>
+                                <p class="text-gray-600">Cities Covered</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+                    <div class="space-y-3">
+                        <button class="w-full text-left px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <i class="fas fa-sync-alt mr-3 text-blue-600"></i>
+                            Run Manual Scraper Update
+                        </button>
+                        <button class="w-full text-left px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <i class="fas fa-database mr-3 text-green-600"></i>
+                            View Database Statistics
+                        </button>
+                        <button class="w-full text-left px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <i class="fas fa-envelope mr-3 text-purple-600"></i>
+                            Send Test Notification
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <script>
@@ -326,7 +673,7 @@
             constructor() {
                 this.currentRoute = window.location.pathname;
                 this.listeners = [];
-                this.validRoutes = ['/', '/contracts', '/home'];
+                this.validRoutes = ['/', '/contracts', '/home', '/login', '/signup', '/profile', '/settings', '/admin'];
                 this.init();
             }
 
@@ -409,13 +756,20 @@
         function navigationApp() {
             return {
                 router: router,
+                auth: {
+                    user: null,
+                    loading: true
+                },
                 stats: {
                     totalContracts: 0,
                     citiesCount: 0,
                     industriesCount: 0
                 },
                 
-                init() {
+                async init() {
+                    // Check authentication status
+                    await this.checkAuth();
+                    
                     // Listen for route changes and force re-render
                     router.addListener(() => {
                         // Force Alpine to re-evaluate by updating a reactive property
@@ -425,6 +779,22 @@
                             });
                         });
                     });
+                },
+                
+                async checkAuth() {
+                    try {
+                        const response = await fetch('/api/user/profile');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.auth.user = data.user;
+                        } else {
+                            this.auth.user = null;
+                        }
+                    } catch (error) {
+                        this.auth.user = null;
+                    } finally {
+                        this.auth.loading = false;
+                    }
                 }
             };
         }
@@ -454,8 +824,15 @@
                     industriesCount: 0
                 },
                 featuredCities: [],
+                auth: {
+                    user: null,
+                    loading: true
+                },
 
                 async init() {
+                    // Check authentication status
+                    await this.checkAuth();
+                    
                     // Set up router listener for view updates and filter loading
                     router.addListener((route) => {
                         this.$nextTick(() => {
@@ -487,6 +864,22 @@
                     
                     // Update navigation stats
                     this.updateNavigationStats();
+                },
+                
+                async checkAuth() {
+                    try {
+                        const response = await fetch('/api/user/profile');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.auth.user = data.user;
+                        } else {
+                            this.auth.user = null;
+                        }
+                    } catch (error) {
+                        this.auth.user = null;
+                    } finally {
+                        this.auth.loading = false;
+                    }
                 },
 
                 async loadFilters() {
@@ -592,8 +985,26 @@
                     const navComponent = document.querySelector('[x-data="navigationApp()"]');
                     if (navComponent && navComponent._x_dataStack && navComponent._x_dataStack[0]) {
                         Object.assign(navComponent._x_dataStack[0].stats, this.stats);
+                        // Also update auth status
+                        Object.assign(navComponent._x_dataStack[0].auth, this.auth);
                     }
                 }
+            }
+        }
+        
+        // Global function for profile loading (used in profile view)
+        async function loadProfile() {
+            try {
+                const response = await fetch('/api/user/profile');
+                if (response.ok) {
+                    const data = await response.json();
+                    return data;
+                } else {
+                    throw new Error('Failed to load profile');
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                return null;
             }
         }
     </script>

@@ -1,43 +1,36 @@
-from flask import Flask, jsonify, render_template, redirect, url_for
+from flask import Flask, jsonify, render_template, redirect, url_for, request, flash, session
 from flask_cors import CORS
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 import psycopg2
 import psycopg2.extras
 from datetime import datetime
 import os
 from urllib.parse import urlparse
+from models import User, get_db_connection, validate_email, validate_password, get_business_types
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend requests
 
-# Database connection
-def get_db_connection():
-    # Use DATABASE_URL environment variable for production, fallback to local for development
-    database_url = os.getenv('DATABASE_URL')
-    
-    if database_url:
-        # Production: Parse DATABASE_URL
-        url = urlparse(database_url)
-        return psycopg2.connect(
-            host=url.hostname,
-            database=url.path[1:],  # Remove leading slash
-            user=url.username,
-            password=url.password,
-            port=url.port,
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
-    else:
-        # Development: Use local database
-        return psycopg2.connect(
-            host="localhost",
-            database="contracts",
-            user="scraper",
-            password="scraperpass",
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
+# Configure Flask-Login
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Please log in to access this page.'
+login_manager.login_message_category = 'info'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get(int(user_id))
+
+# Database connection function is imported from models.py
 
 @app.route('/')
 def index():
-    """Serve the main UI - Landing page"""
+    """Serve the main UI - Landing page or redirect authenticated users to home"""
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
     return render_template('index.html')
 
 @app.route('/contracts')
@@ -45,9 +38,124 @@ def contracts():
     """Serve the contracts page"""
     return render_template('index.html')
 
+# Authentication Routes
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Handle user login"""
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        remember = bool(request.form.get('remember'))
+        
+        if not email or not password:
+            flash('Please provide both email and password.', 'error')
+            return render_template('index.html')
+        
+        user = User.get_by_email(email)
+        if user and user.check_password(password):
+            login_user(user, remember=remember)
+            user.update_last_login()
+            
+            # Redirect to next page or home
+            next_page = request.args.get('next')
+            if next_page and next_page.startswith('/'):
+                return redirect(next_page)
+            return redirect(url_for('home'))
+        else:
+            flash('Invalid email or password.', 'error')
+    
+    return render_template('index.html')
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    """Handle user registration"""
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        business_name = request.form.get('business_name', '').strip()
+        business_type = request.form.get('business_type', '').strip()
+        phone = request.form.get('phone', '').strip()
+        city = request.form.get('city', '').strip()
+        
+        # Validation
+        if not email or not password:
+            flash('Email and password are required.', 'error')
+            return render_template('index.html')
+        
+        if not validate_email(email):
+            flash('Please provide a valid email address.', 'error')
+            return render_template('index.html')
+        
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return render_template('index.html')
+        
+        is_valid, message = validate_password(password)
+        if not is_valid:
+            flash(message, 'error')
+            return render_template('index.html')
+        
+        try:
+            user = User.create(
+                email=email,
+                password=password,
+                business_name=business_name,
+                business_type=business_type,
+                phone=phone,
+                city=city
+            )
+            
+            login_user(user)
+            flash('Account created successfully! Welcome to Contract Opportunities Portal.', 'success')
+            return redirect(url_for('home'))
+            
+        except ValueError as e:
+            flash(str(e), 'error')
+        except Exception as e:
+            flash('An error occurred while creating your account. Please try again.', 'error')
+    
+    return render_template('index.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    """Handle user logout"""
+    logout_user()
+    flash('You have been logged out successfully.', 'info')
+    return redirect(url_for('index'))
+
+@app.route('/profile')
+@login_required
+def profile():
+    """User profile page"""
+    return render_template('index.html')
+
+@app.route('/settings')
+@login_required
+def settings():
+    """User settings page"""
+    return render_template('index.html')
+
+@app.route('/admin')
+@login_required
+def admin():
+    """Admin panel - restricted to admin users"""
+    if not current_user.is_admin():
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('home'))
+    return render_template('index.html')
+
 @app.route('/home')
+@login_required
 def home():
-    """Serve the home page (future authenticated user page)"""
+    """Serve the authenticated user's home page with personalized content"""
     return render_template('index.html')
 
 # Catch-all route for unknown paths - redirect to landing page
@@ -186,6 +294,53 @@ def get_filters():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# User Management API Routes
+@app.route('/api/user/profile')
+@login_required
+def api_user_profile():
+    """API endpoint to get current user profile"""
+    try:
+        user_data = current_user.to_dict()
+        preferences = current_user.get_preferences()
+        
+        return jsonify({
+            'user': user_data,
+            'preferences': dict(preferences) if preferences else None,
+            'business_types': get_business_types()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/user/preferences', methods=['POST'])
+@login_required
+def api_update_preferences():
+    """API endpoint to update user preferences"""
+    try:
+        data = request.get_json()
+        
+        result = current_user.update_preferences(
+            preferred_cities=data.get('preferred_cities'),
+            preferred_industries=data.get('preferred_industries'),
+            min_contract_value=data.get('min_contract_value'),
+            max_contract_value=data.get('max_contract_value'),
+            email_notifications=data.get('email_notifications'),
+            notification_frequency=data.get('notification_frequency'),
+            urgency_alerts=data.get('urgency_alerts')
+        )
+        
+        if result:
+            return jsonify({'success': True, 'message': 'Preferences updated successfully'})
+        else:
+            return jsonify({'error': 'Failed to update preferences'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/business-types')
+def api_business_types():
+    """API endpoint to get available business types"""
+    return jsonify({'business_types': get_business_types()})
 
 if __name__ == '__main__':
     # Get port from environment variable for Heroku, default to 5001 for local development
