@@ -1003,6 +1003,9 @@
                 if (response.ok) {
                     const data = await response.json();
                     return data;
+                } else if (response.status === 401 || response.status === 403) {
+                    // User not authenticated - don't load profile
+                    return null;
                 } else {
                     throw new Error('Failed to load profile');
                 }
@@ -1025,16 +1028,20 @@
             try {
                 const response = await fetch('/login', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    redirect: 'manual'  // Don't follow redirects automatically
                 });
                 
-                if (response.ok) {
-                    // Login successful - redirect to contracts page
+                if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+                    // Login successful - Flask is redirecting
                     window.location.href = '/contracts';
-                } else {
-                    // Login failed - show error under password field
-                    const result = await response.text();
+                } else if (response.ok) {
+                    // Got HTML back (likely error page) - login failed
                     errorText.textContent = 'Invalid email or password';
+                    errorDiv.classList.remove('hidden');
+                } else {
+                    // Other error
+                    errorText.textContent = 'An error occurred. Please try again.';
                     errorDiv.classList.remove('hidden');
                 }
             } catch (error) {
