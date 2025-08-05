@@ -59,11 +59,11 @@ def login():
             login_user(user, remember=remember)
             user.update_last_login()
             
-            # Redirect to next page or home
+            # Redirect to next page or contracts
             next_page = request.args.get('next')
             if next_page and next_page.startswith('/'):
                 return redirect(next_page)
-            return redirect(url_for('home'))
+            return redirect(url_for('contracts'))
         else:
             flash('Invalid email or password.', 'error')
     
@@ -114,7 +114,7 @@ def signup():
             
             login_user(user)
             flash('Account created successfully! Welcome to Contract Opportunities Portal.', 'success')
-            return redirect(url_for('home'))
+            return redirect(url_for('contracts'))
             
         except ValueError as e:
             flash(str(e), 'error')
@@ -308,6 +308,39 @@ def api_user_profile():
             'user': user_data,
             'preferences': dict(preferences) if preferences else None,
             'business_types': get_business_types()
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/stats')
+@login_required
+def api_admin_stats():
+    """API endpoint to get admin dashboard statistics"""
+    if not current_user.is_admin():
+        return jsonify({'error': 'Admin access required'}), 403
+        
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Get user count
+        cur.execute("SELECT COUNT(*) FROM users WHERE is_active = true")
+        user_count = cur.fetchone()['count']
+        
+        # Get contract count (if contracts table exists)
+        try:
+            cur.execute("SELECT COUNT(*) FROM contracts")
+            contract_count = cur.fetchone()['count']
+        except:
+            contract_count = 0
+            
+        cur.close()
+        conn.close()
+        
+        return jsonify({
+            'userCount': user_count,
+            'contractCount': contract_count,
+            'citiesCount': 6  # Hardcoded for now: Somerville, Concord, Worcester, Boston, Newton, Quincy
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500

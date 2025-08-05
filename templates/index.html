@@ -94,6 +94,14 @@
     <!-- Main Content Container -->
     <main id="app-container" class="min-h-screen" x-data="appData()">
         
+        <!-- Loading Screen -->
+        <div x-show="!router.ready" class="bg-gray-50 min-h-screen flex items-center justify-center">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p class="text-gray-600 mt-4">Loading...</p>
+            </div>
+        </div>
+        
         <!-- Landing Page View -->
         <div x-show="router.ready && router.currentRoute === '/'" class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -381,7 +389,7 @@
                         </a>
                     </p>
                 </div>
-                <form class="mt-8 space-y-6" @submit.prevent="handleLogin($event)">
+                <form class="mt-8 space-y-6" @submit.prevent="window.handleLogin($event)">
                     <div class="rounded-md shadow-sm -space-y-px">
                         <div>
                             <label for="email" class="sr-only">Email address</label>
@@ -597,7 +605,7 @@
                         <div class="flex items-center">
                             <i class="fas fa-users text-2xl text-green-600 mr-3"></i>
                             <div>
-                                <p class="text-2xl font-bold text-gray-900">0</p>
+                                <p class="text-2xl font-bold text-gray-900" x-text="adminStats.userCount || 'Loading...'"></p>
                                 <p class="text-gray-600">Registered Users</p>
                             </div>
                         </div>
@@ -788,6 +796,11 @@
                     status: '',
                     search: ''
                 },
+                adminStats: {
+                    userCount: 0,
+                    contractCount: 0,
+                    citiesCount: 6
+                },
                 stats: {
                     totalContracts: 0,
                     citiesCount: 0,
@@ -826,6 +839,11 @@
 
                     await this.loadFilters();
                     await this.loadContracts();
+                    
+                    // Load admin stats if user is admin
+                    if (this.auth && this.auth.user && this.auth.user.role === 'admin') {
+                        await this.loadAdminStats();
+                    }
                     
                     // Load URL parameters if we're on contracts page initially
                     if (router.currentRoute === '/contracts') {
@@ -950,6 +968,22 @@
                     alert('Document download functionality coming soon!');
                 },
 
+                async loadAdminStats() {
+                    try {
+                        const response = await fetch('/api/admin/stats');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.adminStats = {
+                                userCount: data.userCount,
+                                contractCount: data.contractCount,
+                                citiesCount: data.citiesCount
+                            };
+                        }
+                    } catch (error) {
+                        console.error('Error loading admin stats:', error);
+                    }
+                },
+
                 updateNavigationStats() {
                     // Update the navigation component's stats
                     const navComponent = document.querySelector('[x-data="navigationApp()"]');
@@ -979,7 +1013,7 @@
         }
 
         // Handle login form submission
-        async function handleLogin(event) {
+        window.handleLogin = async function(event) {
             const form = event.target;
             const formData = new FormData(form);
             const errorDiv = document.getElementById('login-error');
@@ -995,8 +1029,8 @@
                 });
                 
                 if (response.ok) {
-                    // Login successful - reload page to update auth state
-                    window.location.reload();
+                    // Login successful - redirect to contracts page
+                    window.location.href = '/contracts';
                 } else {
                     // Login failed - show error under password field
                     const result = await response.text();
@@ -1008,7 +1042,7 @@
                 errorText.textContent = 'An error occurred. Please try again.';
                 errorDiv.classList.remove('hidden');
             }
-        }
+        };
     </script>
 </body>
 </html>
