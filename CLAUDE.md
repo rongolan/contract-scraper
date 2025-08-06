@@ -3,6 +3,27 @@
 ## Project Vision
 Building a comprehensive portal for all contract opportunities for service businesses in the Massachusetts area (eventually expanding to other states). Starting with municipal contracts as they're easier to scrape consistently, then expanding to commercial opportunities (hospitals, business parks, etc.).
 
+## Business Model
+**Freemium SaaS model** designed for service business owners who need efficient contract discovery:
+
+### **Free Accounts** 
+- ✅ Full access to contract browsing and filtering
+- ✅ Complete search capabilities across all municipalities
+- ✅ Basic account creation and login
+- ❌ No saved preferences or notifications
+- ❌ No personalized homepage/feed
+
+### **Paid Accounts** (Future Implementation)
+- ✅ All free features plus:
+- ✅ Saved search preferences and filters
+- ✅ Email notifications for new relevant contracts
+- ✅ Personalized homepage feed based on preferences
+- ✅ Advanced filtering and alerting options
+- ✅ Priority customer support
+
+### **Target Market**
+Service businesses (landscaping, construction, plumbing, electrical, HVAC, etc.) who value time-saving automation over manual contract searching. Paid tier focuses on convenience features that justify recurring subscription costs.
+
 ## Current Status
 - **Phase**: 🚀 **PHASE 2 COMPLETED** - Full Authentication System Live on Heroku
 - **Production URL**: https://macontractscraper-18a0ccf5d2d6.herokuapp.com/
