@@ -129,11 +129,24 @@ Based on strategic planning session July 29, 2025:
 - ✅ Admin user created: golansron@gmail.com
 - ✅ Password strength validation and secure hashing
 
-### **Phase 3: Landing Page & Marketing** 🚧 NEXT
-- Professional landing page explaining value proposition
-- Sample data showcase  
-- Pricing tier information (free vs paid)
-- SEO optimization
+### **Phase 3: Landing Page & Marketing + User Journey Implementation** 🚧 NEXT
+
+#### **Phase 3A: Logged Out & Free Account Experience**
+- ✅ Professional landing page explaining value proposition
+- ✅ Conditional navigation (hide My Feed for logged-out users)
+- ✅ Browse Contracts placeholder with signup prompt for logged-out users
+- ✅ Updated My Feed placeholder for premium features
+- ✅ About page (blank template for now)
+- ✅ Settings → Preferences rename with upgrade prompts for free users
+- ✅ Logo routing: landing page (logged out) → Browse Contracts (free account)
+- ✅ Remove landing page access for authenticated users
+
+#### **Phase 3B: Paid Account Features** (Future Implementation)
+- Paid account type differentiation in user model
+- Logo routing to personalized feed for paid users
+- Actual My Feed functionality with customized contract feeds
+- Subscription/payment integration
+- Saved preferences and notification system
 
 ### **Phase 4: Database Architecture Overhaul**
 - Move from full table replacement to incremental updates
