@@ -15,7 +15,7 @@
             <div class="flex items-center justify-between h-20">
                 <div class="flex items-center space-x-8">
                     <div>
-                        <a href="/" @click.prevent="router.navigate('/')" class="text-2xl font-bold text-gray-900">
+                        <a href="/" @click.prevent="handleLogoClick()" class="text-2xl font-bold text-gray-900">
                             Contract Opportunities Portal
                         </a>
                         <p class="text-gray-600 text-sm mt-1">Find relevant contracts for your service business</p>
@@ -26,10 +26,17 @@
                            class="border-b-2 px-1 py-2 text-sm font-medium transition-colors duration-200">
                             Browse Contracts
                         </a>
-                        <a href="/home" @click.prevent="router.navigate('/home')" 
-                           :class="router.currentRoute === '/home' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                        <template x-if="auth.user">
+                            <a href="/home" @click.prevent="router.navigate('/home')" 
+                               :class="router.currentRoute === '/home' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                               class="border-b-2 px-1 py-2 text-sm font-medium transition-colors duration-200">
+                                My Feed
+                            </a>
+                        </template>
+                        <a href="/about" @click.prevent="router.navigate('/about')" 
+                           :class="router.currentRoute === '/about' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                            class="border-b-2 px-1 py-2 text-sm font-medium transition-colors duration-200">
-                            My Feed
+                            About
                         </a>
                     </div>
                 </div>
@@ -46,7 +53,7 @@
                                 </button>
                                 <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                                     <a href="/profile" @click.prevent="router.navigate('/profile')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
-                                    <a href="/settings" @click.prevent="router.navigate('/settings')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                                    <a href="/settings" @click.prevent="router.navigate('/settings')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Preferences</a>
                                     <template x-if="auth.user && auth.user.role === 'admin'">
                                         <a href="/admin" @click.prevent="router.navigate('/admin')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin Panel</a>
                                     </template>
@@ -102,8 +109,8 @@
             </div>
         </div>
         
-        <!-- Landing Page View -->
-        <div x-show="router.ready && router.currentRoute === '/'" class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+        <!-- Landing Page View (Logged-out users only) -->
+        <div x-show="router.ready && router.currentRoute === '/' && !auth.user" class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
                 <div class="text-center">
                     <h1 class="text-5xl font-bold text-gray-900 mb-6">
@@ -163,6 +170,28 @@
                     <h1 class="text-3xl font-bold text-gray-900">Contract Opportunities</h1>
                     <p class="text-gray-600 mt-1">Find relevant contracts for your service business</p>
                 </div>
+
+                <!-- Signup Prompt for Logged-out Users -->
+                <template x-if="!auth.user">
+                    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-6 mb-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <h2 class="text-xl font-semibold mb-2">Want to save your favorite opportunities?</h2>
+                                <p class="text-blue-100">Create a free account to access additional features and stay organized.</p>
+                            </div>
+                            <div class="ml-6 flex space-x-3">
+                                <button @click="router.navigate('/signup')" 
+                                        class="bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-200">
+                                    Sign Up Free
+                                </button>
+                                <button @click="router.navigate('/login')" 
+                                        class="bg-blue-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-400 border border-blue-400 transition-colors duration-200">
+                                    Sign In
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
 
                 <!-- Filters -->
                 <div class="bg-white rounded-lg shadow-sm border p-6 mb-6">
@@ -338,39 +367,98 @@
                         <p class="text-gray-600">Try adjusting your filters to see more results.</p>
                     </div>
                 </div>
+
+                <!-- Bottom Signup Reminder for Logged-out Users -->
+                <template x-if="!auth.user && !loading && !error && filteredContracts.length > 0">
+                    <div class="mt-8 text-center py-8 border-t">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Found what you're looking for?</h3>
+                        <p class="text-gray-600 mb-4">Create a free account to track opportunities and stay organized.</p>
+                        <div class="space-x-4">
+                            <button @click="router.navigate('/signup')" 
+                                    class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200">
+                                Sign Up Free
+                            </button>
+                            <button @click="router.navigate('/login')" 
+                                    class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200">
+                                Already have an account?
+                            </button>
+                        </div>
+                    </div>
+                </template>
             </div>
         </div>
 
-        <!-- Home/Feed View (Future Authenticated Users) -->
+        <!-- Home/Feed View (Premium Feature for Paid Accounts) -->
         <div x-show="router.ready && router.currentRoute === '/home'" class="bg-gray-50 min-h-screen">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
                 <div class="text-center">
                     <h1 class="text-4xl font-bold text-gray-900 mb-6">
                         Your Personalized Feed
                     </h1>
-                    <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-                        This feature is coming soon! It will show personalized contract recommendations based on your business profile and preferences.
-                    </p>
                     
-                    <!-- Placeholder Content -->
-                    <div class="bg-white rounded-lg shadow-sm border p-8 max-w-2xl mx-auto">
-                        <i class="fas fa-user-cog text-4xl text-gray-300 mb-4"></i>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Coming Soon</h3>
-                        <p class="text-gray-600 mb-6">
-                            Sign up for an account to get personalized contract recommendations, save favorites, 
-                            and receive notifications for contracts that match your business.
-                        </p>
-                        <div class="space-x-4">
-                            <button @click="router.navigate('/contracts')" 
-                                    class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200">
-                                Browse All Contracts
-                            </button>
-                            <button class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200" 
-                                    title="Coming Soon">
-                                Sign Up for Account
-                            </button>
+                    <!-- Free Account - Upgrade Prompt -->
+                    <template x-if="auth.user && (!auth.user.account_type || auth.user.account_type === 'free')">
+                        <div>
+                            <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                                Get personalized contract recommendations, email notifications, and saved preferences with a premium account.
+                            </p>
+                            
+                            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-8 max-w-2xl mx-auto mb-6">
+                                <i class="fas fa-star text-4xl text-blue-500 mb-4"></i>
+                                <h3 class="text-xl font-semibold text-gray-900 mb-4">Premium Features</h3>
+                                <div class="text-left space-y-3 mb-6">
+                                    <div class="flex items-center text-gray-700">
+                                        <i class="fas fa-check text-green-600 mr-3"></i>
+                                        <span>Personalized contract recommendations</span>
+                                    </div>
+                                    <div class="flex items-center text-gray-700">
+                                        <i class="fas fa-check text-green-600 mr-3"></i>
+                                        <span>Email notifications for relevant contracts</span>
+                                    </div>
+                                    <div class="flex items-center text-gray-700">
+                                        <i class="fas fa-check text-green-600 mr-3"></i>
+                                        <span>Saved search preferences and filters</span>
+                                    </div>
+                                    <div class="flex items-center text-gray-700">
+                                        <i class="fas fa-check text-green-600 mr-3"></i>
+                                        <span>Advanced filtering and alerting</span>
+                                    </div>
+                                </div>
+                                <div class="space-x-4">
+                                    <button class="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200" 
+                                            title="Coming Soon">
+                                        Upgrade to Premium
+                                    </button>
+                                    <button @click="router.navigate('/contracts')" 
+                                            class="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold border-2 border-blue-600 hover:bg-blue-50 transition-colors duration-200">
+                                        Continue Browsing
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    </template>
+                    
+                    <!-- Paid Account - Coming Soon (Future Implementation) -->
+                    <template x-if="auth.user && auth.user.account_type === 'paid'">
+                        <div>
+                            <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+                                Your personalized feed will show here soon! We're working on implementing this premium feature.
+                            </p>
+                            
+                            <div class="bg-white rounded-lg shadow-sm border p-8 max-w-2xl mx-auto">
+                                <i class="fas fa-cog fa-spin text-4xl text-blue-500 mb-4"></i>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Premium Feature In Development</h3>
+                                <p class="text-gray-600 mb-6">
+                                    Thank you for being a premium subscriber! Your personalized contract feed 
+                                    with custom recommendations and notifications is coming soon.
+                                </p>
+                                <button @click="router.navigate('/contracts')" 
+                                        class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200">
+                                    Browse All Contracts
+                                </button>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>
@@ -568,17 +656,88 @@
             </div>
         </div>
 
-        <!-- Settings View -->
+        <!-- Preferences View -->
         <div x-show="router.ready && router.currentRoute === '/settings'" class="bg-gray-50 min-h-screen">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div class="mb-6">
-                    <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
-                    <p class="text-gray-600 mt-1">Account settings and preferences</p>
+                    <h1 class="text-3xl font-bold text-gray-900">Preferences</h1>
+                    <p class="text-gray-600 mt-1">Customize your contract discovery experience</p>
                 </div>
 
-                <div class="bg-white rounded-lg shadow-sm border p-6">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Coming Soon</h2>
-                    <p class="text-gray-600">Additional settings and preferences will be available in future updates.</p>
+                <!-- Free Account - Upgrade Prompt -->
+                <template x-if="auth.user && (!auth.user.account_type || auth.user.account_type === 'free')">
+                    <div class="space-y-6">
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+                            <div class="flex items-center mb-4">
+                                <i class="fas fa-star text-2xl text-blue-500 mr-3"></i>
+                                <h2 class="text-xl font-semibold text-gray-900">Unlock Premium Preferences</h2>
+                            </div>
+                            <p class="text-gray-700 mb-4">
+                                Save your search preferences, get email notifications, and customize your contract discovery experience.
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div class="bg-white rounded-lg p-4 opacity-60">
+                                    <h3 class="font-semibold text-gray-900 mb-2">
+                                        <i class="fas fa-lock text-blue-500 mr-2"></i>
+                                        Saved Search Preferences
+                                    </h3>
+                                    <p class="text-sm text-gray-600">Save your favorite industries, cities, and contract types</p>
+                                </div>
+                                <div class="bg-white rounded-lg p-4 opacity-60">
+                                    <h3 class="font-semibold text-gray-900 mb-2">
+                                        <i class="fas fa-lock text-blue-500 mr-2"></i>
+                                        Email Notifications
+                                    </h3>
+                                    <p class="text-sm text-gray-600">Get alerted when new contracts match your criteria</p>
+                                </div>
+                            </div>
+                            <button class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200" 
+                                    title="Coming Soon">
+                                Upgrade to Premium
+                            </button>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow-sm border p-6">
+                            <h2 class="text-lg font-semibold text-gray-900 mb-4">Basic Settings</h2>
+                            <p class="text-gray-600">Additional account settings will be available in future updates.</p>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Paid Account - Full Preferences (Future Implementation) -->
+                <template x-if="auth.user && auth.user.account_type === 'paid'">
+                    <div class="bg-white rounded-lg shadow-sm border p-6">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Premium Preferences</h2>
+                        <p class="text-gray-600 mb-4">
+                            Thank you for being a premium subscriber! Full preference customization is coming soon.
+                        </p>
+                        <div class="space-y-4 opacity-60">
+                            <div class="border-l-4 border-blue-500 pl-4">
+                                <h3 class="font-medium text-gray-900">Saved Search Preferences</h3>
+                                <p class="text-sm text-gray-600">Your preferred industries, cities, and contract types will be saved here</p>
+                            </div>
+                            <div class="border-l-4 border-green-500 pl-4">
+                                <h3 class="font-medium text-gray-900">Email Notification Settings</h3>
+                                <p class="text-sm text-gray-600">Configure when and how often you receive email alerts</p>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- About View -->
+        <div x-show="router.ready && router.currentRoute === '/about'" class="bg-gray-50 min-h-screen">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <div class="text-center">
+                    <h1 class="text-4xl font-bold text-gray-900 mb-6">
+                        About Us
+                    </h1>
+                    <div class="bg-white rounded-lg shadow-sm border p-8 max-w-2xl mx-auto">
+                        <p class="text-lg text-gray-600">
+                            Company information and team details coming soon.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -649,7 +808,7 @@
             constructor() {
                 this.currentRoute = window.location.pathname;
                 this.listeners = [];
-                this.validRoutes = ['/', '/contracts', '/home', '/login', '/signup', '/profile', '/settings', '/admin'];
+                this.validRoutes = ['/', '/contracts', '/home', '/login', '/signup', '/profile', '/settings', '/admin', '/about'];
                 this.ready = false;
                 this.init();
             }
@@ -773,6 +932,16 @@
                     } finally {
                         this.auth.loading = false;
                     }
+                },
+
+                handleLogoClick() {
+                    if (this.auth.user) {
+                        // Authenticated users go to Browse Contracts
+                        router.navigate('/contracts');
+                    } else {
+                        // Logged-out users go to landing page
+                        router.navigate('/');
+                    }
                 }
             };
         }
@@ -848,6 +1017,11 @@
                     // Load URL parameters if we're on contracts page initially
                     if (router.currentRoute === '/contracts') {
                         this.loadFiltersFromURL();
+                    }
+                    
+                    // Redirect authenticated users away from landing page
+                    if (router.currentRoute === '/' && this.auth.user) {
+                        router.navigate('/contracts');
                     }
                     
                     // Update navigation stats
@@ -991,6 +1165,16 @@
                         Object.assign(navComponent._x_dataStack[0].stats, this.stats);
                         // Also update auth status
                         Object.assign(navComponent._x_dataStack[0].auth, this.auth);
+                    }
+                },
+
+                handleLogoClick() {
+                    if (this.auth.user) {
+                        // Authenticated users go to Browse Contracts
+                        router.navigate('/contracts');
+                    } else {
+                        // Logged-out users go to landing page
+                        router.navigate('/');
                     }
                 }
             }
