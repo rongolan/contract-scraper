@@ -22,19 +22,19 @@
                     </div>
                     <div class="hidden md:flex space-x-6 ml-8">
                         <a href="/contracts" @click.prevent="router.navigate('/contracts')" 
-                           :class="router.currentRoute === '/contracts' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                           :class="currentRoute === '/contracts' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                            class="border-b-2 px-1 py-2 text-sm font-medium transition-colors duration-200">
                             Browse Contracts
                         </a>
                         <template x-if="auth.user">
                             <a href="/home" @click.prevent="router.navigate('/home')" 
-                               :class="router.currentRoute === '/home' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                               :class="currentRoute === '/home' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                                class="border-b-2 px-1 py-2 text-sm font-medium transition-colors duration-200">
                                 My Feed
                             </a>
                         </template>
                         <a href="/about" @click.prevent="router.navigate('/about')" 
-                           :class="router.currentRoute === '/about' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                           :class="currentRoute === '/about' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
                            class="border-b-2 px-1 py-2 text-sm font-medium transition-colors duration-200">
                             About
                         </a>
@@ -114,11 +114,11 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
                 <div class="text-center">
                     <h1 class="text-5xl font-bold text-gray-900 mb-6">
-                        Find Contract Opportunities
+                        Find Business Opportunities in Massachusetts
                     </h1>
                     <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-                        Discover municipal contracts and service opportunities across Massachusetts. 
-                        Perfect for landscaping, construction, plumbing, electrical, and other service businesses.
+                        Discover municipal and commercial contracts opportunities across Massachusetts. 
+                        Perfect for landscaping, construction, plumbing, electrical, IT, consulting and other service businesses.
                     </p>
                     <div class="flex justify-center space-x-4">
                         <button @click="router.navigate('/contracts')" 
@@ -176,7 +176,7 @@
                     <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-6 mb-6 text-white">
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
-                                <h2 class="text-xl font-semibold mb-2">Want to find new business opportunities?</h2>
+                                <h2 class="text-xl font-semibold mb-2">Want to find new business opportunities in Massachusetts?</h2>
                                 <p class="text-blue-100">Create a free account to search and filter for the contract opportunities that are right for your business.</p>
                             </div>
                             <div class="ml-6 flex space-x-3">
@@ -903,6 +903,7 @@
         function navigationApp() {
             return {
                 router: router,
+                currentRoute: router.currentRoute,
                 auth: {
                     user: null,
                     loading: true
@@ -918,8 +919,8 @@
                     await this.checkAuth();
                     
                     // Listen for route changes and force re-render
-                    router.addListener(() => {
-                        // Force Alpine to re-evaluate by updating a reactive property
+                    router.addListener((route) => {
+                        this.currentRoute = route;  // Update reactive property
                         this.$nextTick(() => {
                             this.$el.querySelectorAll('[x-show]').forEach(el => {
                                 Alpine.evaluate(el, el.getAttribute('x-show'));
